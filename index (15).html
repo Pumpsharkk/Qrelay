@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Q-Relay — Quantum-Safe Cross-Chain & Wallet Security Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07020f;--panel:#110726;--line:#3a1b66;--cyan:#00f0ff;--pink:#ff2a8a;--yellow:#fcee09;--text:#d9d2f0;--dim:#8a7fb0;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.65 "Chakra Petch",system-ui,sans-serif;background-image:linear-gradient(rgba(0,240,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,42,138,.04) 1px,transparent 1px);background-size:44px 44px}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.25) 2px 3px)}
+a{color:var(--cyan)}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.mono{font-family:"Share Tech Mono",monospace}
+header.hero{padding:72px 0 56px;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(46px,11vw,112px);line-height:.95;margin:0 0 18px;font-weight:700;letter-spacing:-.02em;color:#fff;text-shadow:3px 0 var(--pink),-3px 0 var(--cyan);animation:glitch 5s steps(1) infinite}
+@keyframes glitch{0%,92%,100%{text-shadow:3px 0 var(--pink),-3px 0 var(--cyan);transform:none}93%{text-shadow:-8px 0 var(--pink),8px 0 var(--cyan);transform:translateX(3px)}95%{text-shadow:6px 0 var(--cyan),-6px 0 var(--pink);transform:translateX(-4px)}97%{transform:none}}
+.sub{font-size:clamp(18px,3vw,24px);color:var(--cyan);max-width:44ch;margin:0 0 28px}
+.lead{max-width:62ch;color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chip{border:1px solid var(--pink);color:var(--pink);padding:4px 12px;font-size:14px;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+section{padding:60px 0;border-bottom:1px solid var(--line)}
+h2{font-size:clamp(28px,5vw,44px);margin:0 0 8px;color:#fff}
+h2 span{color:var(--pink)}
+.intro{color:var(--dim);max-width:60ch;margin:0 0 32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cyan);padding:22px;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%)}
+.card.p{border-left-color:var(--pink)}
+.card h3{margin:0 0 4px;font-size:21px;color:var(--cyan)}
+.card.p h3{color:var(--pink)}
+.tag{display:block;font-size:13px;color:var(--yellow);margin-bottom:10px}
+.card p{margin:0 0 10px}
+.card p:last-child{margin:0}
+.scroll{overflow-x:auto}
+/* scanner */
+.term{background:#000;border:1px solid var(--cyan);box-shadow:0 0 24px rgba(0,240,255,.25);padding:18px;font-size:15px;min-height:250px}
+.term .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+input,select{flex:1 1 240px;min-width:0;background:#07020f;border:1px solid var(--line);color:var(--cyan);padding:10px 12px;font:inherit}
+button{background:var(--pink);color:#fff;border:0;padding:10px 20px;font:600 16px "Chakra Petch",sans-serif;cursor:pointer;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+button:hover{background:var(--cyan);color:#000}
+#out div,#gout div{margin:2px 0;overflow-wrap:anywhere}
+.ok{color:#39ff88}.warn{color:var(--yellow)}.bad{color:var(--pink)}
+.bar{height:10px;background:#1a0d33;margin:10px 0 4px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#39ff88,var(--yellow),var(--pink));transition:width 1.2s}
+/* flow */
+ol.flow{list-style:none;margin:0;padding:0;border-left:2px solid var(--pink)}
+ol.flow li{padding:0 0 26px 26px;position:relative}
+ol.flow li::before{content:"";position:absolute;left:-8px;top:8px;width:14px;height:14px;background:var(--bg);border:2px solid var(--cyan);transform:rotate(45deg)}
+ol.flow b{color:var(--cyan)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--yellow);font-weight:600}
+td:first-child{color:var(--cyan);white-space:nowrap}
+.note{border:1px dashed var(--yellow);padding:18px 22px;background:rgba(252,238,9,.04)}
+.note h3{margin:0 0 6px;color:var(--yellow)}
+.note ul{margin:8px 0 0;padding-left:20px}
+footer{padding:40px 0;color:var(--dim);font-size:14px}
+@media(prefers-reduced-motion:reduce){h1{animation:none}.bar i{transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+<div class="mono" style="color:var(--dim)">// Q-DAY IS NOT A DATE. IT IS A DEADLINE.</div>
+<h1>Q-RELAY</h1>
+<p class="sub">Quantum-Safe Cross-Chain &amp; Wallet Security Engine</p>
+<p class="lead">Today's blockchains sign with ECDSA or Ed25519. A large quantum computer running Shor's algorithm can break those signatures. Q-Relay is a desktop app and an open-source CLI that measures your quantum exposure, adds post-quantum signatures, and moves long-term assets into a quantum-safe vault.</p>
+<div class="chips"><span class="chip mono">Rust core</span><span class="chip mono">Tauri + React</span><span class="chip mono">ML-DSA / FN-DSA</span><span class="chip mono">Solana + EVM</span><span class="chip mono">Open source CLI</span></div>
+</div></header>
+
+<section id="scanner"><div class="wrap">
+<h2>Risk scanner <span>live</span></h2>
+<p class="intro">Real on-chain analysis. Your browser queries a public RPC node directly: EVM bytecode is disassembled and Solana programs are parsed byte by byte. No backend, nothing is stored. The score is a transparent heuristic built from the findings listed below it.</p>
+<div class="term mono">
+<div class="row"><select id="chain" aria-label="Network"><option value="eth">Ethereum</option><option value="base">Base</option><option value="arb">Arbitrum One</option><option value="bsc">BNB Chain</option><option value="poly">Polygon</option><option value="sol">Solana</option></select><input id="addr" aria-label="Address" placeholder="0x… or Solana address / program ID"></div>
+<div class="row"><input id="rpcurl" aria-label="Custom RPC URL (optional)" placeholder="Custom RPC URL (optional)"><button id="run" type="button">Run scan</button></div>
+<div id="out"><div style="color:var(--dim)">&gt; waiting for target…</div></div>
+</div>
+</div></section>
+
+<section id="entropy"><div class="wrap">
+<h2>Hybrid entropy <span>generator</span></h2>
+<p class="intro">Generates 256 bits of key material in your browser. It mixes OS entropy (Web Crypto) with quantum random numbers from ANU QRNG through HKDF-SHA256, so a failure in one source cannot weaken the result. The ANU API needs a free API key; without one, only OS entropy is used and the output says so.</p>
+<div class="term mono" style="min-height:0">
+<div class="row"><input id="anukey" type="password" autocomplete="off" aria-label="ANU QRNG API key (optional)" placeholder="ANU QRNG API key (optional)"><button id="gen" type="button">Generate</button></div>
+<div id="gout"><div style="color:var(--dim)">&gt; ready</div></div>
+</div>
+</div></section>
+
+<section id="modules"><div class="wrap">
+<h2>Four <span>modules</span></h2>
+<p class="intro">One engine, four jobs: measure the risk, sign safely, generate keys, and store the assets that matter.</p>
+<div class="grid">
+<article class="card"><span class="tag mono">MODULE A</span><h3>Q-Shield</h3>
+<p>Hybrid signature layer. Every transaction carries a standard signature plus a second, NIST-approved post-quantum signature (ML-DSA, formerly CRYSTALS-Dilithium, or FN-DSA, formerly Falcon).</p>
+<p>The contract or relay network approves the transaction only when both signatures are valid. It works with your existing Phantom or MetaMask wallet through a hybrid signature wrapper.</p></article>
+<article class="card p"><span class="tag mono">MODULE B</span><h3>Quantum entropy key generator</h3>
+<p>Standard wallets build seed phrases from pseudo-random (PRNG) math. Q-Relay feeds key generation with entropy from quantum fluctuations and atmospheric noise: the ANU QRNG API or local quantum hardware.</p>
+<p>The result is a key generated from a source that is unpredictable by physics, not only by computation.</p></article>
+<article class="card"><span class="tag mono">MODULE C</span><h3>Smart contract PQC vulnerability scanner</h3>
+<p>Paste a Solana or EVM contract address. Q-Relay inspects its signature verification, hash use and authority keys, then reports how exposed the contract would be on Q-Day as a percentage Quantum Risk Score.</p></article>
+<article class="card p"><span class="tag mono">MODULE D</span><h3>Post-quantum vault</h3>
+<p>A multi-layer cold/hot hybrid panel for high-value assets such as NFTs and large token holdings. Move existing assets into a quantum-safe smart vault in one click, protected by time-lock and lattice-based cryptography.</p></article>
+</div></div></section>
+
+<section id="flow"><div class="wrap">
+<h2>User <span>flow</span></h2>
+<p class="intro">From install to a fully isolated vault, in four steps.</p>
+<ol class="flow">
+<li><b>Install.</b> Install the Q-Relay desktop app and connect your wallet (Phantom, MetaMask) with read-only permission.</li>
+<li><b>Analyze.</b> See the quantum risk map of your assets and of every contract you have interacted with, on a single screen.</li>
+<li><b>Shield.</b> Before a critical transfer, enable Q-Shield. The transaction goes to the mempool with a quantum-resistant hybrid signature.</li>
+<li><b>Store safely.</b> Move long-term holdings into a new-generation quantum vault created with QRNG entropy, isolating them from future Shor's algorithm attacks.</li>
+</ol></div></section>
+
+<section id="stack"><div class="wrap">
+<h2>Architecture &amp; <span>tech stack</span></h2>
+<p class="intro">Two faces: a desktop app for security and wallet management, and a CLI for developers.</p>
+<div class="scroll"><table>
+<tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+<tr><td>Core &amp; CLI</td><td>Rust</td><td>Industry standard for Solana and high-security crypto infrastructure, with strong memory safety.</td></tr>
+<tr><td>GUI</td><td>Tauri + React / TypeScript</td><td>Lighter, faster and safer than Electron.</td></tr>
+<tr><td>PQC</td><td>liboqs (Open Quantum Safe)</td><td>C/Rust wrapper for NIST-approved post-quantum algorithms.</td></tr>
+<tr><td>Chains</td><td>ethers-rs, solana-sdk</td><td>EVM and Solana access for traditional networks.</td></tr>
+<tr><td>Randomness</td><td>ANU QRNG API or local quantum chip</td><td>Real quantum entropy source.</td></tr>
+</table></div></div></section>
+
+<section id="reality"><div class="wrap">
+<h2>Engineering <span>reality check</span></h2>
+<p class="intro">Design decisions we are building around, so the security claims stay honest.</p>
+<div class="grid">
+<div class="note"><h3>Q-Shield needs an on-chain account</h3>
+<p>Ethereum and Solana validators check only ECDSA or Ed25519. A second signature is invisible to the chain unless funds sit in a smart account that requires both: ERC-4337 on EVM, a custom program on Solana. Modules A and D therefore merge into one PQ-verifying vault. Dilithium verification is gas-expensive on EVM; hash-based schemes (Winternitz-style) are more practical on Solana today.</p></div>
+<div class="note"><h3>QRNG is mixed, never alone</h3>
+<p>Pulling entropy over the internet makes a third party part of your trust. The OS CSPRNG is already practically unpredictable. Q-Relay combines QRNG output with OS entropy through HKDF or XOR, so one failing source cannot weaken the key.</p></div>
+<div class="note"><h3>Hashes are not the weak point</h3>
+<p>SHA-256 and Keccak stay safe: Grover's algorithm cuts a 256-bit hash to about 128 bits of strength, which is still strong. The real risks:</p>
+<ul><li>ECDSA and Ed25519 use (<span class="mono">ecrecover</span>, ed25519 verification)</li><li>BLS and pairing-based constructions, including KZG</li><li>Addresses whose public key is already exposed</li><li>Admin and upgrade-authority keys</li></ul>
+<p style="margin-top:10px">The risk score is built on these. On EVM the scanner looks for precompile calls (0x01 ecrecover, 0x08 pairing). On Solana it checks upgrade authority and ed25519 program use.</p></div>
+<div class="note"><h3>Use the official names</h3>
+<p>ML-DSA (Dilithium, FIPS 204), SLH-DSA (SPHINCS+, FIPS 205), FN-DSA (Falcon). Falcon signatures are small but need floating point, so implementation is delicate. liboqs suits prototypes; pure-Rust implementations exist for production. Do not put real funds in the vault before an independent audit.</p></div>
+</div></div></section>
+
+<section id="roadmap"><div class="wrap">
+<h2>Build <span>order</span></h2>
+<ol class="flow">
+<li><b>CLI scanner (Module C).</b> Stores no keys, so it carries no risk. Easiest to spread on GitHub and the most distinctive part of the idea.</li>
+<li><b>Hybrid-entropy key generator (Module B).</b></li>
+<li><b>PQ vault contract (Modules A + D).</b> Hardest and riskiest part. Audit first.</li>
+<li><b>Tauri desktop interface.</b> Last.</li>
+</ol></div></section>
+
+<footer><div class="wrap mono">Q-RELAY // concept page // concept page + live scanner, not audited, not financial advice</div></footer>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var RPC={eth:'https://ethereum-rpc.publicnode.com',base:'https://base-rpc.publicnode.com',arb:'https://arbitrum-one-rpc.publicnode.com',bsc:'https://bsc-rpc.publicnode.com',poly:'https://polygon-bor-rpc.publicnode.com',sol:'https://api.mainnet-beta.solana.com'};
+var out=$('out'),F=[];
+function line(t,c,box){var d=document.createElement('div');d.textContent=t;if(c)d.className=c;(box||out).appendChild(d)}
+function add(sev,pts,t){F.push(pts);line((sev==='ok'?'[ OK ] ':sev==='warn'?'[WARN] ':'[RISK] ')+t,sev==='ok'?'ok':sev==='warn'?'warn':'bad')}
+function rpc(url,m,p){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:m,params:p})}).then(function(r){return r.json()}).then(function(j){if(j.error)throw new Error(j.error.message);return j.result})}
+var AL='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function b58d(s){var n=0n,k,c;for(k=0;k<s.length;k++){c=AL.indexOf(s[k]);if(c<0)throw new Error('bad base58');n=n*58n+BigInt(c)}var h=n.toString(16);if(h.length%2)h='0'+h;var a=[];for(k=0;k<h.length;k+=2)a.push(parseInt(h.substr(k,2),16));for(k=0;k<s.length&&s[k]==='1';k++)a.unshift(0);return Uint8Array.from(a)}
+function b58e(u){var n=0n,k;for(k=0;k<u.length;k++)n=n*256n+BigInt(u[k]);var s='';while(n>0n){s=AL[Number(n%58n)]+s;n/=58n}for(k=0;k<u.length&&u[k]===0;k++)s='1'+s;return s}
+function b64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+function has(buf,needle){var n=needle.length;outer:for(var i=0;i<=buf.length-n;i++){if(buf[i]!==needle[0])continue;for(var j=1;j<n;j++)if(buf[i+j]!==needle[j])continue outer;return true}return false}
+
+/* ---------- EVM ---------- */
+var SLOT_IMPL='0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+var SLOT_ADMIN='0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103';
+function scanCode(hex){
+ var b=hex.slice(2),n=b.length/2,p1=null,p2=null,r={ecrecover:0,pairing:0,kzg:0};
+ for(var i=0;i<n;){
+  var op=parseInt(b.substr(i*2,2),16),cur={op:op,v:-1};
+  if(op>=0x60&&op<=0x7f){var len=op-0x5f;if(len<=4)cur.v=parseInt(b.substr((i+1)*2,len*2),16);i+=1+len}else{
+   if(op===0xfa&&p1&&p1.op===0x5a&&p2&&p2.v>0){if(p2.v===1)r.ecrecover++;else if(p2.v===8)r.pairing++;else if(p2.v===10)r.kzg++}
+   i++}
+  p2=p1;p1=cur;
+ }
+ return r;
+}
+async function evm(url,a){
+ if(!/^0x[0-9a-fA-F]{40}$/.test(a))throw new Error('Not a valid EVM address');
+ var code=await rpc(url,'eth_getCode',[a,'latest']);
+ if(code==='0x'){
+  var nonce=parseInt(await rpc(url,'eth_getTransactionCount',[a,'latest']),16);
+  if(nonce>0)add('bad',60,'EOA with '+nonce+' outgoing transactions: its ECDSA public key is already public on-chain');
+  else add('warn',25,'EOA that never sent a transaction: public key hidden behind the address hash until its first transaction');
+  return;
+ }
+ add('ok',0,'Contract bytecode: '+((code.length-2)/2)+' bytes');
+ var target=code,impl=await rpc(url,'eth_getStorageAt',[a,SLOT_IMPL,'latest']);
+ if(!/^0x0*$/.test(impl)){
+  var ia='0x'+impl.slice(-40);add('warn',10,'EIP-1967 proxy. Implementation: '+ia+' (scanned instead)');
+  target=await rpc(url,'eth_getCode',[ia,'latest']);
+  var adm=await rpc(url,'eth_getStorageAt',[a,SLOT_ADMIN,'latest']);
+  if(!/^0x0*$/.test(adm)){var aa='0x'+adm.slice(-40),ac=await rpc(url,'eth_getCode',[aa,'latest']);
+   if(ac==='0x')add('bad',25,'Proxy admin '+aa+' is an EOA: one ECDSA key can swap the code');else add('warn',8,'Proxy admin '+aa+' is a contract (check its signers)')}
+ }
+ var s=scanCode(target);
+ if(s.ecrecover)add('bad',25,'ecrecover precompile (0x01) called '+s.ecrecover+' time(s): ECDSA verification');else add('ok',0,'No ecrecover call pattern found');
+ if(s.pairing)add('bad',15,'Pairing precompile (0x08) called: BN254 pairing is not quantum-safe');
+ if(s.kzg)add('warn',10,'Point evaluation precompile (0x0a) called: KZG commitments');
+ try{var o=await rpc(url,'eth_call',[{to:a,data:'0x8da5cb5b'},'latest']);
+  if(o&&o.length===66){var oa='0x'+o.slice(-40);
+   if(/^0x0+$/.test(oa))add('ok',0,'owner() is the zero address: ownership renounced');
+   else{var oc=await rpc(url,'eth_getCode',[oa,'latest']);
+    if(oc==='0x')add('bad',25,'owner() '+oa+' is an EOA: single ECDSA key controls the contract');
+    else add('warn',8,'owner() '+oa+' is a contract (multisig signers still use ECDSA)')}}}catch(e){}
+}
+
+/* ---------- Solana ---------- */
+var UPG='BPFLoaderUpgradeab1e11111111111111111111111';
+async function sol(url,a){
+ var raw;try{raw=b58d(a)}catch(e){throw new Error('Not valid base58')}
+ if(raw.length!==32)throw new Error('Solana addresses decode to 32 bytes');
+ var r=await rpc(url,'getAccountInfo',[a,{encoding:'base64'}]);
+ if(!r.value)throw new Error('Account not found on mainnet-beta');
+ var v=r.value;
+ if(!v.executable){add('bad',60,'Account owned by '+v.owner+'. A Solana address is the raw Ed25519 public key, so it is exposed by design');return}
+ add('ok',0,'Executable program, loader '+v.owner);
+ if(v.owner!==UPG){add('ok',0,'Non-upgradeable loader: code is immutable');return}
+ var d=b64(v.data[0]),pd=b58e(d.slice(4,36));
+ var p=await rpc(url,'getAccountInfo',[pd,{encoding:'base64'}]);
+ var g=b64(p.value.data[0]);
+ if(g[12]===0)add('ok',0,'Upgrade authority removed: program is immutable');
+ else{var au=b58e(g.slice(13,45)),ai=await rpc(url,'getAccountInfo',[au,{encoding:'base64'}]);
+  if(ai.value&&ai.value.owner==='11111111111111111111111111111111')add('bad',30,'Upgrade authority '+au+' is a plain wallet: one Ed25519 key can replace the program');
+  else add('warn',10,'Upgrade authority '+au+' is program-controlled (multisig/PDA); check its signers')}
+ var code=g.slice(45),ids={'Ed25519SigVerify111111111111111111111111111':['Ed25519 signature verification',25],'KeccakSecp256k11111111111111111111111111111':['secp256k1 (ECDSA) verification',25],'Secp256r1SigVerify1111111111111111111111111':['secp256r1 (ECDSA) verification',20]},hit=0;
+ for(var k in ids){if(has(code,b58d(k))){hit++;add('bad',ids[k][1],'References the '+ids[k][0]+' native program')}}
+ if(!hit)add('ok',0,'No signature-verification native program IDs found in the binary');
+ line('[INFO] '+code.length+' bytes of program code scanned','');
+}
+
+$('run').addEventListener('click',async function(){
+ var b=$('run'),a=$('addr').value.trim(),c=$('chain').value,u=$('rpcurl').value.trim()||RPC[c];
+ out.textContent='';F=[];
+ if(!a){line('> error: enter an address first','bad');return}
+ b.disabled=true;line('> '+c.toUpperCase()+' via '+u,'');
+ try{
+  if(c==='sol')await sol(u,a);else await evm(u,a);
+  var score=Math.min(100,F.reduce(function(x,y){return x+y},0));
+  var bar=document.createElement('div');bar.className='bar';var f=document.createElement('i');bar.appendChild(f);out.appendChild(bar);
+  setTimeout(function(){f.style.width=score+'%'},30);
+  line('> QUANTUM RISK SCORE: '+score+'/100 (heuristic: sum of the weighted findings above, capped at 100)',score>=60?'bad':score>=25?'warn':'ok');
+ }catch(e){line('> scan failed: '+e.message+'. If this is a network error, the RPC may block browser requests; try a custom RPC URL.','bad')}
+ b.disabled=false;
+});
+
+/* ---------- Hybrid entropy ---------- */
+function hex(u){return Array.prototype.map.call(u,function(x){return ('0'+x.toString(16)).slice(-2)}).join('')}
+$('gen').addEventListener('click',async function(){
+ var g=$('gout'),key=$('anukey').value.trim();g.textContent='';
+ var os=crypto.getRandomValues(new Uint8Array(32)),anu=null;
+ line('> OS entropy: 32 bytes from Web Crypto','ok',g);
+ if(key){try{
+   var r=await fetch('https://api.quantumnumbers.anu.edu.au/?length=32&type=uint8',{headers:{'x-api-key':key}}),j=await r.json();
+   if(!j.success||j.data.length!==32)throw new Error('unexpected response');
+   anu=Uint8Array.from(j.data);line('> ANU QRNG: 32 quantum bytes received','ok',g);
+  }catch(e){line('> ANU QRNG failed ('+e.message+'). Using OS entropy only.','warn',g)}}
+ else line('> No ANU key given. Using OS entropy only.','warn',g);
+ var ikm=new Uint8Array(anu?64:32);ikm.set(os);if(anu)ikm.set(anu,32);
+ var base=await crypto.subtle.importKey('raw',ikm,'HKDF',false,['deriveBits']);
+ var bits=await crypto.subtle.deriveBits({name:'HKDF',hash:'SHA-256',salt:crypto.getRandomValues(new Uint8Array(32)),info:new TextEncoder().encode('q-relay/v1/seed')},base,256);
+ line('> HKDF-SHA256 output (256 bits):','',g);
+ line(hex(new Uint8Array(bits)),'ok',g);
+ line(anu?'> Sources mixed: OS + quantum.':'> Sources mixed: OS only.','',g);
+ line('> This value exists only on this page. Copy it now if you need it; it is not stored.','warn',g);
+});
+})();
+</script>
+</body>
+</html>
