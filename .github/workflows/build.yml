@@ -1,1 +1,224 @@
+name: build
 
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Create project files
+        run: |
+          mkdir -p src
+          cat > Cargo.toml <<'EOF'
+          [package]
+          name = "qrelay"
+          version = "0.1.0"
+          edition = "2021"
+          description = "Quantum risk scanner for EVM contracts and Solana programs"
+          license = "MIT"
+
+          [dependencies]
+          anyhow = "1"
+          base64 = "0.22"
+          clap = { version = "4", features = ["derive"] }
+          serde = { version = "1", features = ["derive"] }
+          serde_json = "1"
+          ureq = { version = "2", features = ["json"] }
+
+          [profile.release]
+          opt-level = 3
+          lto = true
+          strip = true
+          EOF
+          cat > src/main.rs <<'EOF'
+          //! qrelay: quantum risk scanner for EVM contracts and Solana programs.
+
+          use anyhow::{anyhow, Result};
+          use base64::{engine::general_purpose::STANDARD, Engine as _};
+          use clap::{Parser, Subcommand};
+          use serde::Serialize;
+          use serde_json::{json, Value};
+
+          #[derive(Serialize, Clone, Copy, PartialEq)]
+          #[serde(rename_all = "lowercase")]
+          enum Severity {
+              Ok,
+              Warn,
+              Risk,
+          }
+
+          #[derive(Serialize)]
+          struct Finding {
+              severity: Severity,
+              points: u32,
+              message: String,
+          }
+
+          struct Report {
+              target: String,
+              chain: String,
+              findings: Vec<Finding>,
+          }
+
+          impl Report {
+              fn new(target: &str, chain: &str) -> Self {
+                  Report {
+                      target: target.to_string(),
+                      chain: chain.to_string(),
+                      findings: Vec::new(),
+                  }
+              }
+
+              fn add(&mut self, severity: Severity, points: u32, message: impl Into<String>) {
+                  self.findings.push(Finding {
+                      severity,
+                      points,
+                      message: message.into(),
+                  });
+              }
+
+              fn score(&self) -> u32 {
+                  self.findings.iter().map(|f| f.points).sum::<u32>().min(100)
+              }
+
+              fn print_text(&self) {
+                  println!("target: {} ({})", self.target, self.chain);
+                  for f in &self.findings {
+                      let tag = match f.severity {
+                          Severity::Ok => "[ OK ]",
+                          Severity::Warn => "[WARN]",
+                          Severity::Risk => "[RISK]",
+                      };
+                      if f.points > 0 {
+                          println!("{} {} (+{})", tag, f.message, f.points);
+                      } else {
+                          println!("{} {}", tag, f.message);
+                      }
+                  }
+                  println!("QUANTUM RISK SCORE: {}/100", self.score());
+              }
+
+              fn print_json(&self) -> Result<()> {
+                  let v = json!({
+                      "target": self.target,
+                      "chain": self.chain,
+                      "score": self.score(),
+                      "findings": self.findings,
+                  });
+                  println!("{}", serde_json::to_string_pretty(&v)?);
+                  Ok(())
+              }
+          }
+
+          struct Rpc {
+              url: String,
+              agent: ureq::Agent,
+          }
+
+          impl Rpc {
+              fn new(url: &str) -> Self {
+                  Rpc {
+                      url: url.to_string(),
+                      agent: ureq::AgentBuilder::new()
+                          .timeout(std::time::Duration::from_secs(30))
+                          .build(),
+                  }
+              }
+
+              fn call(&self, method: &str, params: Value) -> Result<Value> {
+                  let body = json!({"jsonrpc": "2.0", "id": 1, "method": method, "params": params});
+                  let resp: Value = self.agent.post(&self.url).send_json(body)?.into_json()?;
+                  if let Some(e) = resp.get("error") {
+                      return Err(anyhow!("rpc error: {}", e));
+                  }
+                  Ok(resp.get("result").cloned().unwrap_or(Value::Null))
+              }
+
+              fn call_str(&self, method: &str, params: Value) -> Result<String> {
+                  let v = self.call(method, params)?;
+                  v.as_str()
+                      .map(|s| s.to_string())
+                      .ok_or_else(|| anyhow!("unexpected RPC result for {}", method))
+              }
+          }
+
+          const SLOT_IMPL: &str = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+          const SLOT_ADMIN: &str = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
+
+          fn hex_to_bytes(s: &str) -> Result<Vec<u8>> {
+              let s = s.trim_start_matches("0x");
+              if s.len() % 2 != 0 {
+                  return Err(anyhow!("odd-length hex string"));
+              }
+              (0..s.len())
+                  .step_by(2)
+                  .map(|i| u8::from_str_radix(&s[i..i + 2], 16).map_err(anyhow::Error::from))
+                  .collect()
+          }
+
+          fn is_zero_hex(s: &str) -> bool {
+              s.trim_start_matches("0x").chars().all(|c| c == '0')
+          }
+
+          fn word_to_addr(word: &str) -> String {
+              let h = word.trim_start_matches("0x");
+              let start = h.len().saturating_sub(40);
+              format!("0x{}", &h[start..])
+          }
+
+          #[derive(Default, Debug, PartialEq)]
+          struct Precompiles {
+              ecrecover: u32,
+              pairing: u32,
+              kzg: u32,
+          }
+
+          fn scan_bytecode(code: &[u8]) -> Precompiles {
+              let mut r = Precompiles::default();
+              let mut p1: Option<(u8, Option<u32>)> = None;
+              let mut p2: Option<(u8, Option<u32>)> = None;
+              let mut i = 0usize;
+              while i < code.len() {
+                  let op = code[i];
+                  let mut val: Option<u32> = None;
+                  let mut step = 1usize;
+                  if (0x60..=0x7f).contains(&op) {
+                      let len = (op - 0x5f) as usize;
+                      if len <= 4 {
+                          let end = (i + 1 + len).min(code.len());
+                          let mut v: u32 = 0;
+                          for b in &code[i + 1..end] {
+                              v = (v << 8) | (*b as u32);
+                          }
+                          val = Some(v);
+                      }
+                      step = 1 + len;
+                  } else if op == 0xfa {
+                      if let (Some((0x5a, _)), Some((_, Some(v)))) = (p1, p2) {
+                          match v {
+                              1 => r.ecrecover += 1,
+                              8 => r.pairing += 1,
+                              10 => r.kzg += 1,
+                              _ => {}
+                          }
+                      }
+                  }
+                  p2 = p1;
+                  p1 = Some((op, val));
+                  i += step;
+              }
+              r
+          }
+
+          fn scan_evm(rpc: &Rpc, addr: &str, rep: &mut Report) -> Result<()> {
+              let
